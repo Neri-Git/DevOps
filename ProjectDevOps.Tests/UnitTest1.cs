@@ -38,7 +38,7 @@ public class UnitTest1 : IClassFixture<WebApplicationFactory<Program>>
         // Assert (Sprawdzenie wyniku)
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.NotNull(products);
-        Assert.Equal(3, products.Count);
+        Assert.Equal(4, products.Count);
     }
 
     // TEST 3: Czysty test jednostkowy logiki katalogu produktów (sprawdza poprawność cen i nazw)
@@ -55,5 +55,17 @@ public class UnitTest1 : IClassFixture<WebApplicationFactory<Program>>
             Assert.False(string.IsNullOrWhiteSpace(product.Name));
             Assert.True(product.Price > 0);
         });
+    }
+
+    // TEST 4: Test wyszukiwania produktu po ID (dodany w ramach Pull Requesta dla Zadania #2)
+    [Fact]
+    public void ProductCatalog_GetById_ReturnsMonitorForId4()
+    {
+        // Act (Działanie)
+        var product = ProductCatalog.GetById(4);
+
+        // Assert (Sprawdzenie wyniku)
+        Assert.NotNull(product);
+        Assert.Equal("Monitor LG UltraFine 4K", product.Name);
     }
 }
