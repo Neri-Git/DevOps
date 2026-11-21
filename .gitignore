@@ -1,0 +1,20 @@
+# Pliki kompilacji .NET
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+TestResults/
+*.trx
+
+# Pliki środowiska JetBrains Rider oraz Visual Studio
+.idea/
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Pliki publikacji i pakietów
+publish/
+*.nupkg
+*.snupkg

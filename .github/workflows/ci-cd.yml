@@ -1,0 +1,92 @@
+name: CI/CD Pipeline (.NET 10)
+
+# KIEDY URUCHAMIA SIĘ PIPELINE:
+# 1. Przy każdym Pull Requeście do gałęzi main (uruchamia się tylko etap CI + Quality Gate)
+# 2. Po zmergowaniu / pushu do gałęzi main (uruchamia się CI, a po jego sukcesie etap CD - wdrożenie na Azure)
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  DOTNET_VERSION: '10.0.x'
+  # Pkt 9: Automatyczne wersjonowanie aplikacji na podstawie numeru uruchomienia pipeline'u (np. 1.0.1, 1.0.2...)
+  APP_VERSION: 1.0.${{ github.run_number }}
+
+jobs:
+  # =====================================================================
+  # ETAP 1: PIPELINE CI (Budowanie, Quality Gate, Testy + Raport)
+  # =====================================================================
+  build-and-test:
+    name: "CI: Build, Quality Gate & Unit Tests"
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+
+    steps:
+      - name: 1. Pobranie kodu z repozytorium (Checkout)
+        uses: actions/checkout@v4
+
+      - name: 2. Instalacja środowiska .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: 3. Pobranie zależności NuGet (Restore)
+        run: dotnet restore "Project dev ops.sln"
+
+      # Pkt 13: Quality Gate - traktujemy ostrzeżenia kompilatora jako błędy (-warnaserror)
+      - name: 4. Kompilacja projektu + Quality Gate (Build)
+        run: dotnet build "Project dev ops.sln" --configuration Release --no-restore -warnaserror -p:Version=${{ env.APP_VERSION }}
+
+      - name: 5. Uruchomienie testów jednostkowych (Unit Tests)
+        run: dotnet test "Project dev ops.sln" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+
+      # Pkt 4: Raport z wynikami testów widoczny bezpośrednio w podsumowaniu GitHub Actions
+      - name: 6. Publikacja raportu z testów (Test Report)
+        uses: dorny/test-reporter@v1
+        if: always()
+        continue-on-error: true
+        with:
+          name: Raport Testów Jednostkowych (.NET 10)
+          path: './TestResults/*.trx'
+          reporter: dotnet-trx
+
+      # Pkt 9 & przygotowanie paczki pod CD: Publikacja aplikacji z automatycznym numerem wersji
+      - name: 7. Przygotowanie paczki publikacyjnej (Publish z wersją ${{ env.APP_VERSION }})
+        run: dotnet publish "Project dev ops/Project dev ops.csproj" --configuration Release -p:Version=${{ env.APP_VERSION }} --output ./publish
+
+      - name: 8. Zapisanie artefaktu dla etapu CD
+        uses: actions/upload-artifact@v4
+        with:
+          name: webapp-package
+          path: ./publish
+
+  # =====================================================================
+  # ETAP 2: PIPELINE CD (Automatyczne wdrożenie do Azure App Service)
+  # =====================================================================
+  deploy-to-azure:
+    name: "CD: Deploy to Azure App Service"
+    runs-on: ubuntu-latest
+    # Quality Gate: Wdrożenie CD uruchomi się TYLKO jeśli etap CI (build-and-test) przeszedł na zielono
+    # oraz TYLKO na głównej gałęzi 'main' (nie wdrażamy niezmergowanych Pull Requestów!)
+    needs: build-and-test
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: 1. Pobranie zbudowanej aplikacji z etapu CI
+        uses: actions/download-artifact@v4
+        with:
+          name: webapp-package
+          path: ./publish
+
+      # Pkt 5 (Pipeline CD) oraz Pkt 11 (Sekrety - GitHub Secrets)
+      - name: 2. Wdrożenie do Azure App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./publish
