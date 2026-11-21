@@ -4,6 +4,13 @@ Projekt zaliczeniowy prezentujący pełny proces **CI/CD** (Continuous Integrati
 
 ---
 
+## Wdrożona aplikacja w chmurze Azure (Publiczne linki)
+
+- **Endpoint 1 (`/`):** [https://devops-project-dbdmasfmdygncnhg.italynorth-01.azurewebsites.net/](https://devops-project-dbdmasfmdygncnhg.italynorth-01.azurewebsites.net/)
+- **Endpoint 2 (`/products`):** [https://devops-project-dbdmasfmdygncnhg.italynorth-01.azurewebsites.net/products](https://devops-project-dbdmasfmdygncnhg.italynorth-01.azurewebsites.net/products)
+
+---
+
 ## Funkcjonalności i Endpointy
 
 Aplikacja udostępnia dwa główne endpointy REST API:

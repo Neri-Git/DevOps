@@ -1,6 +1,10 @@
 ﻿using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Integracja logów ILogger bezpośrednio z Azure App Service Log Stream (Pkt 8: Monitoring i logi)
+builder.Logging.AddAzureWebAppDiagnostics();
+
 var app = builder.Build();
 
 // Endpoint 1: Strona główna "/"
