@@ -88,7 +88,7 @@ jobs:
 
       # Pkt 9 & przygotowanie paczki pod CD: Publikacja aplikacji z automatycznym numerem wersji
       - name: 8. Przygotowanie paczki publikacyjnej (Publish z wersją ${{ env.APP_VERSION }})
-        run: dotnet publish "Project dev ops/Project dev ops.csproj" --configuration Release -p:Version=${{ env.APP_VERSION }} --output ./publish
+        run: dotnet publish "Project dev ops/Project dev ops.csproj" --configuration Release -p:Version=${{ env.APP_VERSION }} -p:UseAppHost=false --output ./publish
 
       - name: 9. Zapisanie artefaktu dla etapu CD
         uses: actions/upload-artifact@v4
