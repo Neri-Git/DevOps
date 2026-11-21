@@ -37,8 +37,12 @@ public static class ProductCatalog
     [
         new Product(1, "Laptop Dell XPS", 5499.99m, "Elektronika"),
         new Product(2, "Myszka Logitech MX Master", 399.00m, "Akcesoria"),
-        new Product(3, "Klawiatura mechaniczna Keychron", 499.00m, "Akcesoria")
+        new Product(3, "Klawiatura mechaniczna Keychron", 499.00m, "Akcesoria"),
+        new Product(4, "Monitor LG UltraFine 4K", 1899.00m, "Elektronika")
     ];
+
+    public static Product? GetById(int id) =>
+        GetProducts().FirstOrDefault(p => p.Id == id);
 }
 
 // Potrzebne do testów integracyjnych WebApplicationFactory
