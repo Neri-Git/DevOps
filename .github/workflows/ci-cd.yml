@@ -43,11 +43,42 @@ jobs:
         run: dotnet build "Project dev ops.sln" --configuration Release --no-restore -warnaserror -p:Version=${{ env.APP_VERSION }}
 
       - name: 5. Uruchomienie testów jednostkowych (Unit Tests)
-        run: dotnet test "Project dev ops.sln" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
+        run: dotnet test "ProjectDevOps.Tests/ProjectDevOps.Tests.csproj" --configuration Release --no-build --verbosity normal --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults
 
-      # Pkt 4: Raport z wynikami testów widoczny bezpośrednio w podsumowaniu GitHub Actions
-      - name: 6. Publikacja raportu z testów (Test Report)
-        uses: dorny/test-reporter@v1
+      # Pkt 4: Generowanie czytelnej tabeli z raportem testów bezpośrednio na ekranie głównym (Summary) w GitHub Actions
+      - name: 6. Generowanie raportu z testów w podsumowaniu (Test Report Summary)
+        if: always()
+        run: |
+          python3 - << 'EOF' >> $GITHUB_STEP_SUMMARY
+          import xml.etree.ElementTree as ET
+          import glob, os
+
+          trx_files = glob.glob('./TestResults/*.trx')
+          print("## 📊 Raport z wyników testów jednostkowych (.NET 10)\n")
+          if not trx_files:
+              print("⚠️ Nie znaleziono pliku z wynikami testów.")
+          else:
+              tree = ET.parse(trx_files[0])
+              root = tree.getroot()
+              ns = {'t': 'http://microsoft.com/schemas/VisualStudio/TeamTest/2010'}
+              counters = root.find('.//t:Counters', ns)
+              if counters is not None:
+                  total = counters.attrib.get('total', '0')
+                  passed = counters.attrib.get('passed', '0')
+                  failed = counters.attrib.get('failed', '0')
+                  print(f"**Podsumowanie:** Wszystkich testów: **{total}** | ✅ Zaliczonych: **{passed}** | ❌ Niezaliczonych: **{failed}** | Wersja buildu: `{os.environ.get('APP_VERSION', '1.0.0')}`\n")
+              print("| Nazwa testu jednostkowego | Status | Czas wykonania |")
+              print("|---------------------------|--------|----------------|")
+              for res in root.findall('.//t:UnitTestResult', ns):
+                  name = res.attrib.get('testName', '')
+                  outcome = res.attrib.get('outcome', '')
+                  duration = res.attrib.get('duration', '')
+                  badge = "✅ Passed" if outcome == "Passed" else f"❌ {outcome}"
+                  print(f"| `{name}` | {badge} | `{duration}` |")
+          EOF
+
+      - name: 7. Publikacja raportu w zakładce Checks (Test Reporter)
+        uses: dorny/test-reporter@v2
         if: always()
         continue-on-error: true
         with:
@@ -56,10 +87,10 @@ jobs:
           reporter: dotnet-trx
 
       # Pkt 9 & przygotowanie paczki pod CD: Publikacja aplikacji z automatycznym numerem wersji
-      - name: 7. Przygotowanie paczki publikacyjnej (Publish z wersją ${{ env.APP_VERSION }})
+      - name: 8. Przygotowanie paczki publikacyjnej (Publish z wersją ${{ env.APP_VERSION }})
         run: dotnet publish "Project dev ops/Project dev ops.csproj" --configuration Release -p:Version=${{ env.APP_VERSION }} --output ./publish
 
-      - name: 8. Zapisanie artefaktu dla etapu CD
+      - name: 9. Zapisanie artefaktu dla etapu CD
         uses: actions/upload-artifact@v4
         with:
           name: webapp-package
