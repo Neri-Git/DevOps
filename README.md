@@ -1,3 +1,6 @@
+# Jan Kopacz
+# Szymon Pocheć
+
 # Projekt DevOps – Aplikacja Webowa (.NET 10)
 
 Projekt zaliczeniowy prezentujący pełny proces **CI/CD** (Continuous Integration / Continuous Deployment) dla aplikacji webowej w technologii **.NET 10 Minimal API**, hostowanej w chmurze **Microsoft Azure App Service**.
